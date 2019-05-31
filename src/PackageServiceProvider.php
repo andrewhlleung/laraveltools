@@ -10,6 +10,7 @@ class PackageServiceProvider extends ServiceProvider
             RobotCombineMedia::class
             ,RobotMp3Cut::class
             ,RobotMadeTextOnPng::class
+            ,RobotRunAll::class
     ];
 
     public function boot()

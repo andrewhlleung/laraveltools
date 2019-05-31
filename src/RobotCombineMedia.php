@@ -37,7 +37,7 @@ class RobotCombineMedia extends Command
     
     public function dolast()
     {
-        $this->info('dolast()');
+        // $this->info('dolast()');
         date_default_timezone_set('Asia/Hong_Kong');
 
         $in_mp3path = $this->argument('in_mp3path');
@@ -76,7 +76,7 @@ class RobotCombineMedia extends Command
 
         /// get Video Sample File
         $defaultIndex=0;
-        $mp4_arr = Robot::getStorageDirFiles('combinemedia/sample');        
+        $mp4_arr = Robot::getStorageDirFiles('combinemedia/sample');
         $in_mp4path = $mp4_arr[$defaultIndex];
         $mp4path = storage_path('combinemedia/sample'.'/'.$in_mp4path);
         if( !file_exists($mp4path) ){
@@ -154,7 +154,7 @@ class RobotCombineMedia extends Command
 
     public function do()
     { 
-        $this->info('do()');
+        // $this->info('do()');
         date_default_timezone_set('Asia/Hong_Kong');
 
         $in_mp3path = $this->argument('in_mp3path');

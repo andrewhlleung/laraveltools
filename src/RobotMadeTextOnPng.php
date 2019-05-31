@@ -20,6 +20,7 @@ class RobotMadeTextOnPng extends Command
      * @var string
      */
     protected $description = 'made text on png';
+    protected $default_titles = ['順天知命','蔣權天下'];
 
     /**
      * Create a new command instance.
@@ -83,17 +84,34 @@ class RobotMadeTextOnPng extends Command
             $this->info($in_mp3path);
             $mp3path_arr = explode(' ',$in_mp3path);
             $line2flag=false;
+            $titles = $this->default_titles;
+            $thistitle = '';
             foreach( $mp3path_arr as $mp3path){
+                foreach($titles as $title){
+                    // echo $mp3path.", ".$title;
+                    // echo "\n";
+                    if (mb_strpos($mp3path, $title)!=false) {
+                        $thistitle = $title;
+                        // echo $thistitle." <= ".$title;
+                        // echo "\n";
+                    }
+                }
+
                 if( mb_strpos($mp3path,'主持')!=false ){
                     $line2 = mb_substr($mp3path,mb_strpos($mp3path,'主持'));
                     $line2flag = true;
                     continue;
                 }
                 if ( $line2flag ) {
-                    $line1 = $mp3path;
+                    $line1 = str_replace('.mp3','',$mp3path);
                     break;
                 }
             }
+        }
+
+
+        if ($thistitle=='') {
+            $thistitle = $this->choice('Please input Episode Name.', $this->default_titles);
         }
 
         // $default_max_len=13;
@@ -101,30 +119,45 @@ class RobotMadeTextOnPng extends Command
         //     $line1 = mb_substr($line1,0,$default_max_len).'...';
         // }
 
+$linearr = explode(' ',$mp3_arr[0]);
         /// get 2 lines string
         if ($in_line1=='-') {
-            $in_line1 = $this->ask('Please input first line text. (total 2 lines, sample "鏗鏘集：文革五十年" )',$line1);
+            // $in_line1 = $this->ask('Please input first line text. (total 2 lines, sample "鏗鏘集：文革五十年" )',$line1);
+            $in_line1 = $this->choice('Please input first line text. (total 2 lines, sample "鏗鏘集：文革五十年" )', $linearr);
         }
         if ($in_line2=='-') {
-            $in_line2 = $this->ask('Please input second line text. (total 2 lines, sample "主持：李再唐、蔡浩樑" )',$line2);
+            // $in_line2 = $this->ask('Please input second line text. (total 2 lines, sample "主持：李再唐、蔡浩樑" )',$line2);
+            $in_line2 = $this->choice('Please input second line text. (total 2 lines, sample "主持：李再唐、蔡浩樑" )', $linearr);
         }
 
         $str = $in_line1."\n".$in_line2;
-
+        
 
         /// get Overlay Image
+        $defaultIndex = 0;
         $png_arr=array();
         $pngtmp_arr = Robot::getStorageDirFiles('combinemedia/png_sample');
         foreach ($pngtmp_arr as $pngtmp) {
             $pngkey = str_replace('.png', '', $pngtmp);
             $png_arr[$pngkey]=$pngtmp;
+            if (mb_strpos($pngkey, $thistitle)!=false) {
+                $defaultIndex = $pngkey;
+            }
         }
-        $defaultIndex = 0;
+
+            $this->info('this title: '.$thistitle);
+
         if( count($png_arr)>0 ){
-            $array = $png_arr;
-            reset($array);
-            $png_input = key($array);
-            $defaultIndex = $png_input;
+            // $array = $png_arr;
+            // reset($array);
+            // $png_input = key($array);
+            // $defaultIndex = $png_input;
+            // foreach ($pngtmp_arr as $pngtmp) {
+            //     $pngkey = str_replace('.png', '', $pngtmp);
+            //     if(){
+
+            //     }
+            // }
         }else{
             $this->info('Please provide Png Sample files(in storage combinemedia/png_sample folder).');
             return;
@@ -157,54 +190,36 @@ class RobotMadeTextOnPng extends Command
             return;
         }
 
-
         $ttf_font_path = storage_path('ttf/CYanHei-TCHK-Bold-all.ttf');
-        $maxlinelen = 13;
-        $this->do1280x720v1($str, $png_path, $out_png_path);
+        $maxlinelen=14;
+        $this->do1280x720v1($in_line1,$in_line2, $png_path, $out_png_path,$maxlinelen);
     }
 
-    public function do1280x720($str,$font,$maxlinelen,$in_png_path,$out_png_path)
+    public function do1280x720v1($line1,$line2,$in_png_path,$out_png_path,$maxlinelen=14)
     {
-        $str_arr = explode("\n",$str);
+        
+        $ttf_font_path = storage_path('ttf/CYanHei-TCHK-Bold-all.ttf');
+
+        $str_arr = explode("\n",$line1);
         foreach($str_arr as &$str_item){
             if(mb_strlen($str_item)>$maxlinelen){
                 $str_item = mb_substr($str_item,0,$maxlinelen);
                 $str_item = $str_item."...";
             }
         }
-        $str = implode("\n",$str_arr);
-        $originalImage = $in_png_path;
+        $line1 = implode("\n",$str_arr);
 
-        if (file_exists($originalImage)) {
-            $im = imagecreatefrompng($originalImage);
-            imagesavealpha($im, true);
-            if (!$im) {
-                die("im is null");
-            }
-            $black = imagecolorallocate($im, 0, 0, 0);            
-            $white = imagecolorallocate($im, 255, 255, 255);
-            $black = imagecolorallocate($im, 0, 0, 0);
-            if (isset($str)) {
-                imagettftext($im, 60, 0, 20, 550, $white, $font, $str);
-            }
-            imagepng($im, $out_png_path, 0);
-            imagedestroy($im);
-        }
-
-    }
-
-    public function do1280x720v1($str,$in_png_path,$out_png_path)
-    {
-        $maxlinelen=15;
-        $ttf_font_path = storage_path('ttf/CYanHei-TCHK-Bold-all.ttf');
-        $str_arr = explode("\n",$str);
-        foreach($str_arr as &$str_item){
-            if(mb_strlen($str_item)>$maxlinelen){
-                $str_item = mb_substr($str_item,0,$maxlinelen);
+        $str_arr = explode("\n", $line2);
+        foreach ($str_arr as &$str_item) {
+            if (mb_strlen($str_item)>$maxlinelen) {
+                $str_item = mb_substr($str_item, 0, $maxlinelen);
                 $str_item = $str_item."...";
             }
         }
-        $str = implode("\n",$str_arr);
+        $line2 = implode("\n", $str_arr);
+        $this->info($line1);
+        $this->info($line2);
+
         $originalImage = $in_png_path;
 
         if (file_exists($originalImage)) {
@@ -216,13 +231,45 @@ class RobotMadeTextOnPng extends Command
             }
             $black = imagecolorallocate($im, 0, 0, 0);            
             $white = imagecolorallocate($im, 255, 255, 255);
-            $black = imagecolorallocate($im, 0, 0, 0);
-            if (isset($str)) {
-                imagettftext($im, 60, 0, 20, 550, $white, $ttf_font_path, $str);
+            $yellow = imagecolorallocate($im, 244, 235, 66);
+            if ( isset($line1) && isset($line1) ) {
+                // imagettftext($im, 60, 0, 20, 550, $white, $ttf_font_path, $str);
+                imagettftext($im, 60, 0, 20, 490, $yellow, $ttf_font_path, $line1);
+                imagettftext($im, 60, 0, 20, 590, $white, $ttf_font_path, $line2);
             }
             imagepng($im, $out_png_path, 0);
             imagedestroy($im);
         }
 
     }
+
+    // public function do1280x720($str,$font,$maxlinelen,$in_png_path,$out_png_path)
+    // {
+    //     $str_arr = explode("\n",$str);
+    //     foreach($str_arr as &$str_item){
+    //         if(mb_strlen($str_item)>$maxlinelen){
+    //             $str_item = mb_substr($str_item,0,$maxlinelen);
+    //             $str_item = $str_item."...";
+    //         }
+    //     }
+    //     $str = implode("\n",$str_arr);
+    //     $originalImage = $in_png_path;
+
+    //     if (file_exists($originalImage)) {
+    //         $im = imagecreatefrompng($originalImage);
+    //         imagesavealpha($im, true);
+    //         if (!$im) {
+    //             die("im is null");
+    //         }
+    //         $black = imagecolorallocate($im, 0, 0, 0);            
+    //         $white = imagecolorallocate($im, 255, 255, 255);
+    //         $black = imagecolorallocate($im, 0, 0, 0);
+    //         if (isset($str)) {
+    //             imagettftext($im, 60, 0, 20, 550, $white, $font, $str);
+    //         }
+    //         imagepng($im, $out_png_path, 0);
+    //         imagedestroy($im);
+    //     }
+
+    // }
 }
